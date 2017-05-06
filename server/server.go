@@ -32,6 +32,7 @@ func ErrHandler() gin.HandlerFunc {
         defer err_handler.Recover(&err, func() {
             if err != nil {
                 c.JSON(http.StatusInternalServerError, gin.H{
+                    "code": -1,
                     "data": err.Error(),
                 })
                 c.Abort()
@@ -43,19 +44,39 @@ func ErrHandler() gin.HandlerFunc {
 
 
 func Start() {
+
+    websocketServer := newWebsocketServer()
+
+
     engine := gin.New()
     engine.Use(ErrHandler())
     engine.Use(gin.Recovery())
+
+    engine.GET("/socket/", gin.WrapH(websocketServer))
 
     // request log
     engine.Use(RequestLog())
 
     apiRouter := engine.Group("/api")
     {
+        // 列表
         apiRouter.GET("/stock/list", stockCtrl.GetStockList)
+        // 更新列表
         apiRouter.GET("/stock/list/update", stockCtrl.UpdateList)
+        // 更新watching状态
         apiRouter.PUT("/stock/watching", stockCtrl.ModifyWatchingState)
+        // 删除没有关注的时序collection
+        apiRouter.DELETE("/stock/unwatching", stockCtrl.CleanUnwatchingCodeDataCollection)
+        // 抓取数据
+        apiRouter.GET("/stock/timeSeriesData/load", stockCtrl.LoadStockData)
 
+        //--- talib ---
+        apiRouter.GET("/stock/talib/:function", stockCtrl.TalibHandler)
+
+
+        // 查询时序数据
+        apiRouter.GET("/stock/timeSeriesData/query", stockCtrl.QueryTimeSeriesData)
+        // 获取task的状态
         apiRouter.GET("/common/task/status", commonCtrl.GetTaskStatus)
     }
 

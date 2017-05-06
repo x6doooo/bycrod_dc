@@ -8,6 +8,7 @@ import (
     "bycrod_dc/model/stock"
     "github.com/x6doooo/gout"
     "gopkg.in/mgo.v2/bson"
+    "bycrod_dc/service/common/mongo"
 )
 
 
@@ -61,7 +62,7 @@ func getDetails(codes []string) (details []stock.Record) {
 
 func LoadRecordListFromDb(condition bson.M, sort string, skip int, limit int) (list []stock.Record) {
 
-    q := stockListCollection.Find(condition)
+    q := StockListCollection.Find(condition)
 
     if sort != "" {
         q = q.Sort(sort)
@@ -87,7 +88,7 @@ func LoadRecordsFromDb(condition bson.M, sort string, skip int, limit int) (reco
 }
 
 func Count(condition bson.M) (int, error) {
-    return stockListCollection.Find(condition).Count()
+    return StockListCollection.Find(condition).Count()
 }
 
 func merge(recordMap map[string]stock.Record, details []stock.Record) (results []interface{}) {
@@ -145,12 +146,56 @@ func UpdateList() error {
 
     recordMap := LoadRecordsFromDb(bson.M{}, "", 0, 0)
     list := merge(recordMap, details)
-    stockListCollection.RemoveAll(bson.M{})
-    stockListCollection.Insert(list...)
+    StockListCollection.RemoveAll(bson.M{})
+    StockListCollection.Insert(list...)
     return nil
 }
 
 
+func GetWatchingCodes() (codes []string) {
+    list := []map[string]string{}
+    StockListCollection.Find(bson.M{
+        "watching": true,
+    }).Select(bson.M{
+        "code": 1,
+    }).All(&list)
+    for _, item := range list {
+        codes = append(codes, item["code"])
+    }
+    return
+}
 
+func CleanUnwatchingCodeDataCollection() {
+
+    taskName := "CleanCodeCollection"
+    task.Lock(taskName)
+    defer task.Unlock(taskName)
+
+    names, err := mongo.DB.CollectionNames()
+    if err != nil {
+        panic(err)
+    }
+
+    watchingCodes := GetWatchingCodes()
+    watchingCodeMap := make(map[string]bool)
+    for _, wcName := range watchingCodes {
+        watchingCodeMap[wcName] = true
+    }
+
+    for _, name := range names {
+        util.Logger.Info("name: %s", name)
+        idx := strings.Index(name, "code_")
+        if idx != 0 {
+            continue
+        }
+        codeName := strings.Split(name, "_")[1]
+        util.Logger.Info("codeName: %s", codeName)
+        if _, ok := watchingCodeMap[codeName]; ok {
+            continue
+        }
+        util.Logger.Info("remove: %s", name)
+        mongo.DB.C(name).DropCollection()
+    }
+}
 
 

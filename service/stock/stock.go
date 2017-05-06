@@ -16,19 +16,18 @@ const (
 
 var (
     SbClient *snowball.Client
-    stockListCollection *mgo.Collection
+    StockListCollection *mgo.Collection
 )
-
-
 
 
 func init() {
 
-    stockListCollection = mongo.DB.C(stockListCollectionName)
+    StockListCollection = mongo.DB.C(stockListCollectionName)
 
     sbConfig := conf.MainConf.Xueqiu
     SbClient = snowball.New(sbConfig.Username, sbConfig.Password)
     SbClient.Login()
+
 }
 
 

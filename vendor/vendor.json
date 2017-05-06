@@ -9,6 +9,12 @@
 			"revisionTime": "2017-03-28T06:15:53Z"
 		},
 		{
+			"checksumSHA1": "XAmOTLgxYCj9paYY2kXahGlYPgc=",
+			"path": "github.com/corpix/uarand",
+			"revision": "1d58d0383c4d7a4697f63d1097d466864c9ab6d3",
+			"revisionTime": "2017-02-27T09:04:21Z"
+		},
+		{
 			"checksumSHA1": "UsILDoIB2S7ra+w2fMdb85mX3HM=",
 			"path": "github.com/gin-gonic/gin/binding",
 			"revision": "e2212d40c62a98b388a5eb48ecbdcf88534688ba",
@@ -115,6 +121,12 @@
 			"path": "github.com/x6doooo/snowball",
 			"revision": "1b126d4ad6badf8ec6f6a4b192e815e06f6c1cfc",
 			"revisionTime": "2017-05-02T05:26:57Z"
+		},
+		{
+			"checksumSHA1": "8qG9RO/C2aUymeHQ9p68qI9EaEc=",
+			"path": "github.com/x6doooo/talib",
+			"revision": "5dc8e8f3182d3d83be1e08138048f3ab6178189e",
+			"revisionTime": "2017-02-21T12:27:04Z"
 		},
 		{
 			"path": "golang.org/x/net/context",

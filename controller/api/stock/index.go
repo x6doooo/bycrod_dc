@@ -7,6 +7,8 @@ import (
     "net/http"
     "gopkg.in/mgo.v2/bson"
     "strconv"
+    "bycrod_dc/service/yahoo"
+    "errors"
 )
 
 
@@ -31,7 +33,12 @@ func GetStockList(ctx *gin.Context) {
 
     condition := bson.M{}
     if code != "" {
-        condition["code"] = code
+        condition["code"] = bson.M{
+            "$regex": bson.RegEx{
+                Pattern: code,
+                Options: "i",
+            },
+        }
     }
     if exchange != "" {
         condition["exchange"] = exchange
@@ -81,3 +88,29 @@ func ModifyWatchingState(ctx *gin.Context) {
     ctx.JSON(http.StatusOK, util.OkResponse("ok"))
 }
 
+func CleanUnwatchingCodeDataCollection(ctx *gin.Context) {
+    go stockService.CleanUnwatchingCodeDataCollection()
+    ctx.JSON(http.StatusOK, util.OkResponse("ok"))
+}
+
+func LoadStockData(ctx *gin.Context) {
+    dataType := ctx.DefaultQuery("type", "daily")
+    go yahoo.Load(dataType)
+    ctx.JSON(http.StatusOK, util.OkResponse("ok"))
+}
+
+func QueryTimeSeriesData(ctx *gin.Context) {
+
+    code := ctx.DefaultQuery("code", "")
+    dataType := ctx.DefaultQuery("dataType", "daily")
+    startDate := ctx.DefaultQuery("startDate", "")
+    endDate := ctx.DefaultQuery("endDate", "")
+
+    if code == "" {
+        panic(errors.New("need stock code"))
+        return;
+    }
+
+    res := stockService.QueryTimeSeriesDataByDate(code, dataType, startDate, endDate)
+    ctx.JSON(http.StatusOK, util.OkResponse(res))
+}
