@@ -24,3 +24,5 @@ func TalibHandler(ctx *gin.Context) {
     ctx.JSON(http.StatusOK, util.OkResponse(res))
 }
 
+
+

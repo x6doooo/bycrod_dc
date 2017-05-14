@@ -33,22 +33,28 @@ type XueqiuConf struct {
     Password string
 }
 
-type BackendConf struct {
-    Grabs []string
+//type BackendConf struct {
+//    Grabs []string
+//}
+
+type BasicAuthConf struct {
+    User string
+    Pass string
 }
 
 type mainConf struct {
-    Env     EnvConf
-    Log     LogConf
-    Server  ServerConf
-    Mongo   MongoConf
-    Xueqiu  XueqiuConf
-    Backend BackendConf
+    Env       EnvConf
+    Log       LogConf
+    Server    ServerConf
+    Mongo     MongoConf
+    Xueqiu    XueqiuConf
+    //Backend   BackendConf
+    BasicAuth []BasicAuthConf
 }
 
 const (
     ENV_MODE_DEV = "dev"
-    ENV_MODE_RELEASE = "release"
+    ENV_MODE_RELEASE = "prod"
 )
 
 var (

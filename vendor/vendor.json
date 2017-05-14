@@ -123,10 +123,10 @@
 			"revisionTime": "2017-05-02T05:26:57Z"
 		},
 		{
-			"checksumSHA1": "8qG9RO/C2aUymeHQ9p68qI9EaEc=",
+			"checksumSHA1": "RLNr2N6z9Kg92pq4ReV58rSi+kw=",
 			"path": "github.com/x6doooo/talib",
-			"revision": "5dc8e8f3182d3d83be1e08138048f3ab6178189e",
-			"revisionTime": "2017-02-21T12:27:04Z"
+			"revision": "2f795ff22950798fb42001c43b1bf583c1d59489",
+			"revisionTime": "2017-05-14T06:24:24Z"
 		},
 		{
 			"path": "golang.org/x/net/context",
