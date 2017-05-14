@@ -1,0 +1,68 @@
+//
+   Created by yangdongxu on 2017/5/3.
+
+.view-container.main-view-container
+
+    div(style='overflow:hidden;')
+        el-radio-group(size='small',
+        style='float:left',
+        @change='exchangeChange',
+        v-model='exchangeSelected')
+            el-radio-button(v-for='item in common.Exchanges',
+            :label='item.key') {{item.label}}
+
+
+        div(style='float: left; margin-left: 10px; margin-right: 10px')
+            el-radio-group(size='small',
+            @change='watchingStatusSelectedChange',
+            v-model='watchingStatusSelected')
+                el-radio-button(v-for='item in common.watchingStatus',
+                :label='item.key') {{item.label}}
+
+
+        div(style='width:200px; float:left')
+            el-input(placeholder="通过code查询股票",
+            icon="search",
+            v-model="search",
+            size='small',
+            :on-icon-click="GetStockList")
+
+
+    el-button(
+    @click='UpdateStockList',
+    :loading='common.taskStatus.UpdateStockList') 更新股票列表
+
+    el-button(
+    @click='LoadTimeSeriesData',
+    :loading='common.taskStatus.loadStockDataFromYahooApi') 获取Watching股票的时序数据
+
+    el-pagination(
+    @size-change="handleSizeChange",
+    @current-change="handleCurrentChange",
+    :current-page.sync="currentPage",
+    :page-sizes="[20, 50, 100]",
+    :page-size="currentRows",
+    layout="total, sizes, prev, pager, next, jumper",
+    :total="count")
+
+    el-table(:data="data")
+        el-table-column(label="stock")
+            template(scope="scope")
+                .stock-name {{ scope.row.Name }}
+                div
+                    span.exchange-tag {{ scope.row.Exchange }}
+                    span.code-tag {{ scope.row.Code }}
+
+        el-table-column(label='是否关注')
+            template(scope='scope')
+                el-switch(
+                on-text="",
+                off-text="",
+                @change='watchingChange(scope.row)'
+                v-model="scope.row.Watching",
+                on-color="#13ce66")
+
+        el-table-column(label='操作')
+            template(scope='scope')
+                el-button(v-if='scope.row.Watching',
+                @click='go(scope.row.Code)', size='mini') 图表

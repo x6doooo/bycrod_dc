@@ -1,0 +1,30 @@
+//
+   Created by yangdongxu on 2017/5/5.
+
+
+.view-container
+
+    div
+        el-button(size='mini',
+        @click='back') 返回
+    h1 {{$route.params.code}}
+
+    el-radio-group(v-model="dateRangeType")
+        el-radio(:label="1") 全部
+        el-radio(:label="2") 自定义
+
+    el-date-picker(v-if='dateRangeType == 2',
+    size='small',
+    :clearable='false',
+    v-model="dateRange"
+    type="daterange"
+    align="right"
+    placeholder="选择日期范围",
+    :picker-options="pickerOptions")
+
+    el-button(type='primary',
+    :loading='loading',
+    @click='loadData') 加载数据
+
+    hi-chart(:options='chartOptions',
+    :series='chartSeries')
