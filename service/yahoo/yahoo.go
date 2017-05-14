@@ -12,13 +12,11 @@ import (
     "strings"
     "bycrod_dc/service/util"
     "github.com/corpix/uarand"
+    "net"
 )
 
 var (
-    hosts = []string{
-        "query1.finance.yahoo.com",
-        "query2.finance.yahoo.com",
-    }
+    hosts []string
     client *http.Client
 
     //uaIdx = 0
@@ -30,9 +28,22 @@ var (
 )
 
 func init() {
+
     client = &http.Client{
         Timeout: time.Second * 5,
     }
+    ips, _ := net.LookupIP("query1.finance.yahoo.com") //([]IP, error)
+
+    hosts = []string{}
+    for _, ip := range ips {
+        ip = ip.To4()
+        if ip != nil {
+            hosts = append(hosts, ip.String())
+        }
+    }
+
+    util.Logger.Info("%v", hosts)
+
 }
 
 func newRequest(host, code, interval, rangeStr string) *http.Request {
@@ -42,8 +53,9 @@ func newRequest(host, code, interval, rangeStr string) *http.Request {
     util.Logger.Info(wholeUrl)
     req, _ := http.NewRequest("GET", wholeUrl, nil)
 
+    req.Host = "query1.finance.yahoo.com"
     req.Header.Add("User-Agent", uarand.GetRandom())
-    req.Header.Add("Host", host)
+    //req.Header.Set("Host", "query1.finance.yahoo.com")
     req.Header.Add("Connection", "keep-alive")
     req.Header.Add("Pragma", "no-cache")
     req.Header.Add("Cache-Control", "no-cache")

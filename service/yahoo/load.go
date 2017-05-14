@@ -9,45 +9,23 @@ import (
     "gopkg.in/mgo.v2/bson"
     "bycrod_dc/service/common/mongo"
     "errors"
+    "runtime"
 )
 
-const (
-    interval_daily = "1d"
-    the_range_daily = "3072d"
 
-    interval_hourly = "1h"
-    the_range_hourly = "1024d"
-
-    interval_minutely = "1m"
-    the_range_minutely = "100d"
-
-    interval_realtime = "1m"
-    the_range_realtime = "5m"
+var (
+    timeParams = map[string]([]string){
+        "daily": []string{"1d", "3072d"},
+        "hourly": []string{"1h", "1024d"},
+        "minutely": []string{"1m", "100d"},
+        "realtime": []string{"1m", "5m"},
+    }
 )
 
-type ByHigh []QuoteItem
-func (me ByHigh) Len() int {
-    return len(me)
-}
-func (me ByHigh) Swap(i, j int) {
-    me[i], me[j] = me[j], me[i]
-}
-func (me ByHigh) Less(i, j int) bool {
-    return me[i].High < me[i].High
-}
 
-type ByLow []QuoteItem
-func (me ByLow) Len() int {
-    return len(me)
-}
-func (me ByLow) Swap(i, j int) {
-    me[i], me[j] = me[j], me[i]
-}
-func (me ByLow) Less(i, j int) bool {
-    return me[i].Low < me[i].Low
-}
-
-
+/*
+    爬取数据的入口函数
+ */
 func Load(dataType string) (err error) {
 
     taskName := "loadStockDataFromYahooApi"
@@ -58,47 +36,49 @@ func Load(dataType string) (err error) {
         return
     }
 
+    // 获取watching状态的codes
     codes := stock.GetWatchingCodes()
+
     util.Logger.Info("watching codes size: %d", len(codes))
     startTime := time.Now()
     count := 0
+    // 进入循环，开始抓取，直到满足退出条件
     for {
-        codes = loop(codes, startTime, dataType)
-        util.Logger.Info("failed size: %d", len(codes))
+        codes = dispatch(codes, startTime, dataType)
+        util.Logger.Info("failed: %d", len(codes))
+
+        // dispatch函数返回的codes为上一轮失败的codes
+        // 如果为空，表示结束
         if len(codes) == 0 {
             break
         }
+
+        // 如果循环抓取超过10次 直接退出
         count += 1
         if count > 10 {
+            util.Logger.Info("loop time > 10, force quit!")
             break
         }
     }
 
-    util.Logger.Info("yahoo data fetch done!")
+    util.Logger.Info("yahoo data fetch done! total time: %s",
+        time.Now().Sub(startTime).String())
     return
 }
 
-func loop(codes []string, startTime time.Time, dataType string) (failedCodes []string) {
+/*
+    分发函数
+ */
+func dispatch(codes []string, startTime time.Time, dataType string) (failedCodes []string) {
     var interval string
     var the_range string
-    switch dataType {
-    case "daily":
-        interval = interval_daily
-        the_range = the_range_daily
-    case "hourly":
-        interval = interval_hourly
-        the_range = the_range_hourly
-    case "minutely":
-        interval = interval_minutely
-        the_range = the_range_minutely
-    case "realtime":
-        interval = interval_realtime
-        the_range = the_range_realtime
-    default:
-        interval = interval_daily
-        the_range = the_range_daily
+    if value, ok := timeParams[dataType]; ok {
+        interval = value[0]
+        the_range = value[1]
     }
-    processNum := 2
+
+    // 根据cpu决定起几个goroutine
+    processNum := runtime.NumCPU() * 1
     step := len(codes) / processNum
 
     wg := sync.WaitGroup{}
@@ -115,7 +95,6 @@ func loop(codes []string, startTime time.Time, dataType string) (failedCodes []s
 
     wg.Wait()
 
-
     return
 }
 
@@ -129,7 +108,6 @@ failedCodes *([]string), dataType string, startTime time.Time,) {
     for idx, code := range codes {
 
         collectionName := util.CollectionName(code, dataType)
-        //collectionName := "code_" + code + "_" + dataType
 
         util.Logger.Info("%s %d/%d %s", code, idx, size, time.Since(startTime).String())
 
