@@ -16,6 +16,7 @@ func GetStockList(ctx *gin.Context) {
 
     code := ctx.DefaultQuery("code", "")
     exchange := ctx.DefaultQuery("exchange", "")
+    watching := ctx.DefaultQuery("watching", "")
     page := ctx.DefaultQuery("page", "1")
     rows := ctx.DefaultQuery("rows", "50")
     order := ctx.DefaultQuery("order", "asc")
@@ -42,6 +43,12 @@ func GetStockList(ctx *gin.Context) {
     }
     if exchange != "" {
         condition["exchange"] = exchange
+    }
+    if watching != "" {
+        condition["watching"] = map[string]bool{
+            "watching": true,
+            "notWatching": false,
+        }[watching]
     }
 
     pageInt, _ := strconv.Atoi(page)
@@ -113,4 +120,13 @@ func QueryTimeSeriesData(ctx *gin.Context) {
 
     res := stockService.QueryTimeSeriesDataByDate(code, dataType, startDate, endDate)
     ctx.JSON(http.StatusOK, util.OkResponse(res))
+}
+
+
+func DropUnwatchingTsData(ctx *gin.Context) {
+    err := stockService.DropUnwatchingTsData()
+    if err != nil {
+        panic(err)
+    }
+    ctx.JSON(http.StatusOK, util.OkResponse("ok"))
 }
