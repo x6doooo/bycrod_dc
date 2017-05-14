@@ -53,15 +53,16 @@ var (
     }
 )
 
-func QueryDailyData(collectionName string) QueryDataResult {
+func QueryDailyData(code string, dataType string, numDays int) QueryDataResult {
+
+    collectionName := util.CollectionName(code, dataType)
+
+    count, _ := mongo.DB.C(collectionName).Find(bson.M{}).Count()
+
     condition := []bson.M{
-        //bson.M{
-        //    "$match": bson.M{
-        //        "date": bson.M{
-        //            "$lt": dateStr,
-        //        },
-        //    },
-        //},
+        bson.M{
+            "$skip": count - numDays,
+        },
         baseConditionSort,
         baseConditionFields,
     }
@@ -92,3 +93,4 @@ func QueryTimeSeriesDataByDate(code, dataType, startDate, endDate string) (res Q
     mongo.DB.C(collectionName).Pipe(conditions).One(&res)
     return
 }
+
