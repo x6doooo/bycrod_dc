@@ -9,6 +9,7 @@ import (
     "net/http"
     stockCtrl "bycrod_dc/controller/api/stock"
     commonCtrl "bycrod_dc/controller/api/common"
+    analyzerCtrl "bycrod_dc/controller/api/analyzer"
 )
 
 
@@ -42,6 +43,14 @@ func ErrHandler() gin.HandlerFunc {
     }
 }
 
+func BasicAuth() gin.HandlerFunc {
+    accounts := gin.Accounts{}
+    for _, item := range conf.MainConf.BasicAuth {
+        accounts[item.User] = item.Pass
+    }
+    return gin.BasicAuth(accounts)
+}
+
 
 func Start() {
 
@@ -52,10 +61,26 @@ func Start() {
     engine.Use(ErrHandler())
     engine.Use(gin.Recovery())
 
-    engine.GET("/socket/", gin.WrapH(websocketServer))
 
     // request log
     engine.Use(RequestLog())
+    engine.Use(BasicAuth())
+
+    staticPath := "./fe/.tmp"
+    if !conf.IsDevMode {
+        staticPath = "./fe/dist"
+    }
+
+    engine.LoadHTMLGlob(staticPath + "/*.html")
+    engine.GET("/fe/index", func(c *gin.Context) {
+        util.Logger.Info("%v", conf.MainConf.BasicAuth[0])
+        c.HTML(http.StatusOK, "index.html", gin.H{})
+    })
+    engine.Static("/fe/scripts", staticPath + "/scripts")
+    engine.Static("/fe/assets", staticPath + "/assets")
+
+
+    engine.GET("/socket/", gin.WrapH(websocketServer))
 
     apiRouter := engine.Group("/api")
     {
@@ -69,6 +94,8 @@ func Start() {
         apiRouter.DELETE("/stock/unwatching", stockCtrl.CleanUnwatchingCodeDataCollection)
         // 抓取数据
         apiRouter.GET("/stock/timeSeriesData/load", stockCtrl.LoadStockData)
+        // 删除没有watching的timeseries数据
+        apiRouter.DELETE("/stock/timeSeriesData/unwatching", stockCtrl.DropUnwatchingTsData)
 
         //--- talib ---
         apiRouter.GET("/stock/talib/:function", stockCtrl.TalibHandler)
@@ -78,6 +105,9 @@ func Start() {
         apiRouter.GET("/stock/timeSeriesData/query", stockCtrl.QueryTimeSeriesData)
         // 获取task的状态
         apiRouter.GET("/common/task/status", commonCtrl.GetTaskStatus)
+
+        // analysis
+        apiRouter.GET("/analysis/signals", analyzerCtrl.Signals)
     }
 
     util.Logger.Info("server start! %s", conf.MainConf.Server.Addr)
